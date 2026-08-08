@@ -34,3 +34,6 @@ a { color: inherit; text-decoration: none; }
 
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Keep every lime primary action readable, including pages rendered from older utility classes. */
+.bg-primary { color: #091422 !important; }
