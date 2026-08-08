@@ -39,7 +39,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <section aria-label="Pilih tanggal" className="mt-7">
         <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-2 sm:gap-3">
-          {dates.map((date, index) => (
+          {dates.map((date) => (
             <a key={date.toISOString()} href={`/?date=${format(date, "yyyy-MM-dd")}`} aria-current={format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") ? "date" : undefined} className={`min-w-[82px] rounded-lg border px-4 py-3 text-center transition ${format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-foreground hover:border-primary"}`}>
               <span className="block text-xs font-bold uppercase tracking-wider">{format(date, "EEE", { locale: id })}</span>
               <span className="mt-1 block text-2xl font-extrabold leading-none">{format(date, "d")}</span>

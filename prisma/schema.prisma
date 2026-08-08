@@ -67,6 +67,22 @@ model Court {
   updatedAt   DateTime @updatedAt
   slots       CourtSlot[]
   bookingItems BookingItem[]
+  priceRules   CourtPriceRule[]
+}
+
+model CourtPriceRule {
+  id         String   @id @default(cuid())
+  courtId    String
+  dayOfWeek  Int?
+  startsAt   String
+  endsAt     String
+  hourlyRate Decimal  @db.Decimal(12, 2)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  court      Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  @@index([courtId, dayOfWeek, isActive])
 }
 
 model CourtSlot {
