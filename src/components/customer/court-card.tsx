@@ -23,7 +23,7 @@ export function CourtCard({ court }: CourtCardProps) {
         </div>
         <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-4">
           <p className="text-sm font-bold text-muted"><span className="text-primary">{court.availableSlots}</span> sesi kosong</p>
-          <Link href={`/jadwal?court=${court.id}${court.date ? `&date=${court.date}` : ""}`} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-extrabold text-primary-foreground transition hover:brightness-110">Lihat Jadwal <ArrowRight className="size-4" /></Link>
+          <Link href={`/jadwal?court=${court.id}${court.date ? `&date=${court.date}` : ""}`} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-extrabold text-background transition hover:brightness-110">Lihat Jadwal <ArrowRight className="size-4" /></Link>
         </div>
       </div>
     </article>
