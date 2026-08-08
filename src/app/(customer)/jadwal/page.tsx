@@ -1,0 +1,46 @@
+import { addDays, format, startOfDay } from "date-fns";
+import { id } from "date-fns/locale";
+import { SchedulePicker, type ScheduleDay } from "@/components/customer/schedule-picker";
+import { getScheduleWindow } from "@/modules/schedules/repository";
+
+export const dynamic = "force-dynamic";
+
+export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ court?: string }> }) {
+  const { court: requestedCourt } = await searchParams;
+  const { courts, operatingHours, slots: storedSlots } = await getScheduleWindow(7);
+  const now = new Date();
+  const slotState = new Map(storedSlots.map((slot) => {
+    const key = `${slot.courtId}:${format(slot.startsAt, "yyyy-MM-dd")}:${format(slot.startsAt, "HH:mm")}`;
+    const status = slot.status === "HELD" && slot.holdExpiresAt && slot.holdExpiresAt <= now ? "AVAILABLE" : slot.status;
+    return [key, status] as const;
+  }));
+
+  const days: ScheduleDay[] = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(startOfDay(now), index);
+    const dateKey = format(date, "yyyy-MM-dd");
+    const hours = operatingHours.find((item) => item.dayOfWeek === date.getDay());
+    const opensAt = Number(hours?.opensAt.split(":")[0] ?? 8);
+    const closesAt = Number(hours?.closesAt.split(":")[0] ?? 23);
+    const times = hours?.isOpen === false ? [] : Array.from({ length: Math.max(0, closesAt - opensAt) }, (_, hourIndex) => `${String(opensAt + hourIndex).padStart(2, "0")}:00`);
+
+    return {
+      key: dateKey,
+      dayName: format(date, "EEE", { locale: id }).toUpperCase(),
+      dayNumber: format(date, "d"),
+      fullLabel: format(date, "EEEE, d MMMM yyyy", { locale: id }),
+      courts: courts.map((court) => ({
+        id: court.id,
+        name: court.name,
+        floorType: court.floorType,
+        hourlyRate: Number(court.hourlyRate),
+        imageUrl: court.imageUrl ?? "/images/courts/court-1.jpg",
+        slots: times.map((time) => {
+          const startsAt = new Date(`${dateKey}T${time}:00+07:00`);
+          return { id: `${court.id}:${dateKey}:${time}`, time, status: startsAt <= now ? "BOOKED" : (slotState.get(`${court.id}:${dateKey}:${time}`) ?? "AVAILABLE") };
+        }),
+      })),
+    };
+  });
+
+  return <SchedulePicker days={days} initialCourtId={requestedCourt} />;
+}

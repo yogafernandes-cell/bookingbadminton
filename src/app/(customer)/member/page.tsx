@@ -1,0 +1,11 @@
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { getServerSession } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
+import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
+export const dynamic = "force-dynamic";
+const rupiah = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
+export default async function MemberPage() { const session = await getServerSession(authOptions); if (!session?.user?.email) redirect("/member/login"); const user = await db.user.findUnique({ where: { email: session.user.email }, include: { bookings: { include: { items: { include: { court: true }, take: 1 } }, orderBy: { createdAt: "desc" } } } }); if (!user || user.role !== "MEMBER") redirect("/"); return <div className="mx-auto max-w-5xl px-4 py-8"><p className="text-sm font-bold uppercase tracking-[.18em] text-primary">Arena member</p><h1 className="mt-2 text-3xl font-extrabold">Halo, {user.name}</h1><p className="mt-2 text-muted">{user.phone ?? user.email}</p><div className="mt-7 flex items-center justify-between"><h2 className="text-2xl font-bold">Riwayat booking</h2><Link href="/jadwal" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-extrabold text-primary-foreground">Booking lapangan</Link></div><div className="mt-4 grid gap-3">{user.bookings.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center text-muted">Belum ada booking dari akun ini.</div> : user.bookings.map((booking) => { const item = booking.items[0]; return <Link key={booking.id} href={`/booking/${booking.code}`} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5 hover:border-primary"><div><div className="flex gap-2"><p className="font-mono font-extrabold text-primary">{booking.code}</p><BookingStatusBadge status={booking.status} /></div><p className="mt-2 font-bold">{item?.court.name ?? "Lapangan"}</p><p className="mt-1 text-sm text-muted">{item ? format(item.startsAt, "EEEE, d MMM yyyy · HH:mm", { locale: id }) : "-"}</p></div><p className="font-extrabold">{rupiah.format(Number(booking.totalAmount))}</p></Link>; })}</div></div>; }
