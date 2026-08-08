@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -7,6 +5,7 @@ import { ArrowLeft, MessageCircle } from "lucide-react";
 import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { formatWib } from "@/lib/format-wib";
 
 export const dynamic = "force-dynamic";
 const rupiah = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
@@ -18,7 +17,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Promi
   const booking = await db.booking.findUnique({ where: { id }, include: { items: { include: { court: true }, orderBy: { startsAt: "asc" } }, payments: { orderBy: { createdAt: "desc" } } } });
   if (!booking) notFound();
   const first = booking.items[0]; const last = booking.items.at(-1);
-  const schedule = first && last ? `${first.court.name}, ${format(first.startsAt, "EEEE, d MMMM yyyy", { locale: localeId })} pukul ${format(first.startsAt, "HH:mm")}–${format(last.endsAt, "HH:mm")} WIB` : "-";
+  const schedule = first && last ? `${first.court.name}, ${formatWib(first.startsAt, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} pukul ${formatWib(first.startsAt, { hour: "2-digit", minute: "2-digit", hour12: false })}–${formatWib(last.endsAt, { hour: "2-digit", minute: "2-digit", hour12: false })} WIB` : "-";
   const statusText = booking.status === "CONFIRMED" ? "sudah dikonfirmasi" : booking.status === "PAYMENT_REVIEW" ? "sedang menunggu verifikasi" : "telah kami terima";
   const message = `Halo ${booking.customerName}, booking ${booking.code} Anda ${statusText}.%0A%0AJadwal: ${schedule}%0ATotal: ${rupiah.format(Number(booking.totalAmount))}%0A%0ATerima kasih.`;
   const whatsappUrl = `https://wa.me/${booking.customerPhone}?text=${message}`;
