@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const paymentBucket = "payment-proofs";
+const courtBucket = "court-images";
 let adminClient: SupabaseClient | undefined;
 let bucketReady: Promise<void> | undefined;
 
@@ -42,4 +43,14 @@ export async function createPaymentProofSignedUrl(path: string, expiresInSeconds
   const { data, error } = await getAdminClient().storage.from(paymentBucket).createSignedUrl(path, expiresInSeconds);
   if (error) throw error;
   return data.signedUrl;
+}
+
+export async function uploadCourtImageWebp(buffer: Buffer) {
+  const supabase = getAdminClient();
+  const { data } = await supabase.storage.getBucket(courtBucket);
+  if (!data) { const { error } = await supabase.storage.createBucket(courtBucket, { public: true, fileSizeLimit: 5 * 1024 * 1024, allowedMimeTypes: ["image/webp"] }); if (error && !error.message.toLowerCase().includes("already exists")) throw error; }
+  const path = `${randomUUID()}.webp`;
+  const { error } = await supabase.storage.from(courtBucket).upload(path, buffer, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
+  if (error) throw error;
+  return supabase.storage.from(courtBucket).getPublicUrl(path).data.publicUrl;
 }

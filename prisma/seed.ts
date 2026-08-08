@@ -16,7 +16,7 @@ async function main() {
   await db.setting.upsert({
     where: { id: 1 },
     update: {},
-    create: { id: 1, venueName: "Arena Badminton", address: "Atur alamat arena", adminWhatsapp: "6280000000000", bankName: "Atur bank", bankAccountNumber: "0000000000", bankAccountHolder: "Arena Badminton" },
+    create: { id: 1, venueName: "Booking Lapangan", address: "Atur alamat arena", adminWhatsapp: "6280000000000", bankName: "Atur bank", bankAccountNumber: "0000000000", bankAccountHolder: "Booking Lapangan" },
   });
 
   const courts = [

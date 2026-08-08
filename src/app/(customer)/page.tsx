@@ -1,4 +1,4 @@
-import { addDays, format } from "date-fns";
+import { addDays, format, startOfDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { CalendarDays, MapPin } from "lucide-react";
 import { CourtCard } from "@/components/customer/court-card";
@@ -6,18 +6,22 @@ import { listActiveCourts } from "@/modules/courts/repository";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const courtRecords = await listActiveCourts();
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+  const query = await searchParams;
+  const today = startOfDay(new Date());
+  const candidate = /^\d{4}-\d{2}-\d{2}$/.test(query.date ?? "") ? new Date(`${query.date}T00:00:00+07:00`) : today;
+  const selectedDate = candidate >= today && candidate < addDays(today, 7) ? candidate : today;
+  const courtRecords = await listActiveCourts(selectedDate);
   const courts = courtRecords.map((court) => ({
     id: court.id,
     name: court.name,
     floorType: court.floorType,
     location: "Indoor · Lantai 1",
     hourlyRate: Number(court.hourlyRate),
-    availableSlots: Math.max(0, 15 - court.slots.length),
+    availableSlots: Math.max(0, 15 - court.slots.filter((slot) => slot.status !== "HELD" || !slot.holdExpiresAt || slot.holdExpiresAt > new Date()).length),
     imageUrl: court.imageUrl ?? "/images/courts/court-1.jpg",
+    date: format(selectedDate, "yyyy-MM-dd"),
   }));
-  const today = new Date();
   const dates = Array.from({ length: 7 }, (_, index) => addDays(today, index));
 
   return (
@@ -36,17 +40,17 @@ export default async function HomePage() {
       <section aria-label="Pilih tanggal" className="mt-7">
         <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-2 sm:gap-3">
           {dates.map((date, index) => (
-            <button key={date.toISOString()} type="button" aria-pressed={index === 0} className={`min-w-[82px] rounded-lg border px-4 py-3 text-center transition ${index === 0 ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-foreground hover:border-primary"}`}>
+            <a key={date.toISOString()} href={`/?date=${format(date, "yyyy-MM-dd")}`} aria-current={format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") ? "date" : undefined} className={`min-w-[82px] rounded-lg border px-4 py-3 text-center transition ${format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-foreground hover:border-primary"}`}>
               <span className="block text-xs font-bold uppercase tracking-wider">{format(date, "EEE", { locale: id })}</span>
               <span className="mt-1 block text-2xl font-extrabold leading-none">{format(date, "d")}</span>
-            </button>
+            </a>
           ))}
         </div>
       </section>
 
       <section className="mt-8">
         <div className="mb-5 flex items-end justify-between gap-4">
-          <div><h2 className="text-2xl font-bold">Pilih lapangan</h2><p className="mt-1 text-sm text-muted">Harga dan slot tersedia untuk hari ini.</p></div>
+          <div><h2 className="text-2xl font-bold">Pilih lapangan</h2><p className="mt-1 text-sm text-muted">Harga dan slot tersedia untuk {format(selectedDate, "d MMMM", { locale: id })}.</p></div>
           <div className="hidden items-center gap-2 text-sm text-muted sm:flex"><MapPin className="size-4 text-primary" />Jakarta Selatan</div>
         </div>
         {courts.length > 0 ? <div className="grid gap-5 md:grid-cols-2 xl:gap-6">{courts.map((court) => <CourtCard key={court.id} court={court} />)}</div> : <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center text-muted">Belum ada lapangan aktif.</div>}

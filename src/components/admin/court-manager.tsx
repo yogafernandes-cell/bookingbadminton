@@ -24,7 +24,16 @@ export function CourtManager({ courts }: { courts: Court[] }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setError(""); setSuccess("");
     const data = new FormData(event.currentTarget);
-    const payload = { name: data.get("name"), description: data.get("description"), floorType: data.get("floorType"), hourlyRate: Number(data.get("hourlyRate")), imageUrl: data.get("imageUrl"), isActive: data.get("isActive") === "on" };
+    let imageUrl = data.get("imageUrl");
+    const photo = data.get("photo");
+    if (photo instanceof File && photo.size > 0) {
+      const upload = new FormData(); upload.append("file", photo);
+      const uploaded = await fetch("/api/admin/courts/upload", { method: "POST", body: upload });
+      const result = await uploaded.json();
+      if (!uploaded.ok) { setError(result.error ?? "Foto belum dapat diupload."); setSaving(false); return; }
+      imageUrl = result.imageUrl;
+    }
+    const payload = { name: data.get("name"), description: data.get("description"), floorType: data.get("floorType"), hourlyRate: Number(data.get("hourlyRate")), imageUrl, isActive: data.get("isActive") === "on" };
     const response = await fetch(editing ? `/api/admin/courts/${editing.id}` : "/api/admin/courts", { method: editing ? "PATCH" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     const result = await response.json();
     if (!response.ok) { setError(result.error ?? "Lapangan belum dapat disimpan."); setSaving(false); return; }

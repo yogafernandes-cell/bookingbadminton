@@ -5,8 +5,8 @@ import { getScheduleWindow } from "@/modules/schedules/repository";
 
 export const dynamic = "force-dynamic";
 
-export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ court?: string }> }) {
-  const { court: requestedCourt } = await searchParams;
+export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ court?: string; date?: string }> }) {
+  const { court: requestedCourt, date: requestedDate } = await searchParams;
   const { courts, operatingHours, slots: storedSlots } = await getScheduleWindow(7);
   const now = new Date();
   const slotState = new Map(storedSlots.map((slot) => {
@@ -42,5 +42,5 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     };
   });
 
-  return <SchedulePicker days={days} initialCourtId={requestedCourt} />;
+  return <SchedulePicker days={days} initialCourtId={requestedCourt} initialDate={requestedDate} />;
 }

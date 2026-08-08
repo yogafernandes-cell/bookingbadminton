@@ -4,11 +4,11 @@ import { db } from "@/lib/db";
 
 export async function CustomerHeader() {
   const settings = await db.setting.findUnique({ where: { id: 1 }, select: { venueName: true } });
-  const venueName = settings?.venueName ?? "Arena Badminton";
+  const venueName = settings?.venueName ?? "Booking Lapangan";
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3" aria-label="Arena Badminton, beranda">
+        <Link href="/" className="flex items-center gap-3" aria-label="Booking Lapangan, beranda">
           <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"><span className="text-lg font-black">A</span></span>
           <span className="text-xl font-extrabold tracking-tight text-primary sm:text-2xl">{venueName}</span>
         </Link>
@@ -19,7 +19,8 @@ export async function CustomerHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <Link href="/jadwal" aria-label="Cari jadwal" className="hidden size-10 place-items-center rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-primary sm:grid"><Search className="size-5" /></Link>
-          <Link href="/cek-booking" aria-label="Akun atau cek booking" className="grid size-10 place-items-center rounded-full bg-surface-high text-foreground"><CircleUserRound className="size-6" /></Link>
+          <Link href="/member/login" aria-label="Login member" className="hidden items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-extrabold text-primary transition hover:bg-primary hover:text-primary-foreground sm:flex"><CircleUserRound className="size-4" />Login</Link>
+          <Link href="/member/login" aria-label="Login member" className="grid size-10 place-items-center rounded-full bg-surface-high text-foreground sm:hidden"><CircleUserRound className="size-6" /></Link>
         </div>
       </div>
     </header>

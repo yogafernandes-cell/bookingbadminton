@@ -9,8 +9,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Arena Badminton",
-    template: "%s | Arena Badminton",
+    default: "Booking Lapangan",
+    template: "%s | Booking Lapangan",
   },
   description: "Booking lapangan badminton secara online.",
 };

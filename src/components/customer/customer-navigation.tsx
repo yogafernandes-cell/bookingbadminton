@@ -8,7 +8,7 @@ const items = [
   { href: "/", label: "Cari", icon: Search },
   { href: "/jadwal", label: "Jadwal", icon: CalendarDays },
   { href: "/cek-booking", label: "Riwayat", icon: History },
-  { href: "/cek-booking", label: "Akun", icon: UserRound },
+  { href: "/member", label: "Akun", icon: UserRound },
 ];
 
 export function CustomerNavigation() {

@@ -11,8 +11,8 @@ export type ScheduleDay = { key: string; dayName: string; dayNumber: string; ful
 
 const rupiah = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
-export function SchedulePicker({ days, initialCourtId }: { days: ScheduleDay[]; initialCourtId?: string }) {
-  const [activeDayKey, setActiveDayKey] = useState(days[0]?.key ?? "");
+export function SchedulePicker({ days, initialCourtId, initialDate }: { days: ScheduleDay[]; initialCourtId?: string; initialDate?: string }) {
+  const [activeDayKey, setActiveDayKey] = useState(days.some((day) => day.key === initialDate) ? initialDate! : (days[0]?.key ?? ""));
   const [selectedCourtId, setSelectedCourtId] = useState(initialCourtId && days[0]?.courts.some((court) => court.id === initialCourtId) ? initialCourtId : "");
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const activeDay = days.find((day) => day.key === activeDayKey) ?? days[0];
