@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const query = await searchParams;
   const today = startOfDay(new Date());
-  const candidate = /^\d{4}-\d{2}-\d{2}$/.test(query.date ?? "") ? new Date(`${query.date}T00:00:00+07:00`) : today;
+  const candidate = /^\d{4}-\d{2}-\d{2}$/.test(query.date ?? "") ? startOfDay(new Date(`${query.date}T12:00:00+07:00`)) : today;
   const selectedDate = candidate >= today && candidate < addDays(today, 7) ? candidate : today;
   const courtRecords = await listActiveCourts(selectedDate);
   const courts = courtRecords.map((court) => ({
