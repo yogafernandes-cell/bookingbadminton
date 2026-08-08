@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, Layers3 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type SlotStatus = "AVAILABLE" | "HELD" | "BOOKED" | "BLOCKED";
-type ScheduleCourt = { id: string; name: string; floorType: string; hourlyRate: number; imageUrl: string; slots: { id: string; time: string; status: SlotStatus }[] };
+type ScheduleCourt = { id: string; name: string; floorType: string; hourlyRate: number; imageUrl: string; slots: { id: string; time: string; price: number; status: SlotStatus }[] };
 export type ScheduleDay = { key: string; dayName: string; dayNumber: string; fullLabel: string; courts: ScheduleCourt[] };
 
 const rupiah = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
@@ -17,7 +17,7 @@ export function SchedulePicker({ days, initialCourtId, initialDate }: { days: Sc
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const activeDay = days.find((day) => day.key === activeDayKey) ?? days[0];
   const selectedCourt = activeDay?.courts.find((court) => court.id === selectedCourtId);
-  const total = (selectedCourt?.hourlyRate ?? 0) * selectedSlotIds.length;
+  const total = selectedCourt?.slots.filter((slot) => selectedSlotIds.includes(slot.id)).reduce((sum, slot) => sum + slot.price, 0) ?? 0;
 
   const selectedTimes = useMemo(() => selectedCourt?.slots.filter((slot) => selectedSlotIds.includes(slot.id)).map((slot) => slot.time) ?? [], [selectedCourt, selectedSlotIds]);
 
@@ -48,7 +48,7 @@ export function SchedulePicker({ days, initialCourtId, initialDate }: { days: Sc
                 <div className="relative min-h-40 bg-surface-high"><Image src={court.imageUrl} alt={court.name} fill sizes="190px" className="object-cover" /><span className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-extrabold text-primary-foreground">Tersedia</span></div>
                 <div className="p-5"><div className="flex items-start justify-between gap-4"><div><h2 className="text-2xl font-bold">{court.name}</h2><p className="mt-2 flex items-center gap-2 text-sm text-muted"><Layers3 className="size-4 text-primary" />{court.floorType}</p></div><div className="text-right"><p className="text-xs font-semibold text-muted">HARGA / JAM</p><p className="mt-1 text-lg font-extrabold text-primary">{rupiah.format(court.hourlyRate)}</p></div></div></div>
               </div>
-              <div className="border-t border-border p-5"><div className="mb-3 flex flex-wrap gap-4 text-xs font-semibold text-muted"><span><i className="mr-1 inline-block size-2 rounded-full bg-primary" />Tersedia</span><span><i className="mr-1 inline-block size-2 rounded-full bg-surface-high" />Penuh</span><span><i className="mr-1 inline-block size-2 rounded-full bg-warning" />Diblokir</span></div><div className="grid grid-cols-3 gap-2 sm:grid-cols-5 xl:grid-cols-6">{court.slots.map((slot) => { const selected = selectedSlotIds.includes(slot.id); const disabled = slot.status !== "AVAILABLE"; return <button key={slot.id} type="button" disabled={disabled} onClick={() => toggleSlot(court.id, slot.id)} className={`relative rounded-md border px-2 py-3 text-sm font-bold transition ${selected ? "border-primary bg-primary text-primary-foreground" : slot.status === "BLOCKED" ? "border-warning/60 bg-warning/10 text-warning" : disabled ? "cursor-not-allowed border-border bg-background/40 text-muted/40 line-through" : "border-border bg-background hover:border-primary"}`}>{selected ? <Check className="absolute right-1 top-1 size-3" /> : null}{slot.time}</button>; })}</div></div>
+              <div className="border-t border-border p-5"><div className="mb-3 flex flex-wrap gap-4 text-xs font-semibold text-muted"><span><i className="mr-1 inline-block size-2 rounded-full bg-primary" />Tersedia</span><span><i className="mr-1 inline-block size-2 rounded-full bg-surface-high" />Penuh</span><span><i className="mr-1 inline-block size-2 rounded-full bg-warning" />Diblokir</span></div><div className="grid grid-cols-3 gap-2 sm:grid-cols-5 xl:grid-cols-6">{court.slots.map((slot) => { const selected = selectedSlotIds.includes(slot.id); const disabled = slot.status !== "AVAILABLE"; return <button key={slot.id} type="button" disabled={disabled} onClick={() => toggleSlot(court.id, slot.id)} className={`relative rounded-md border px-2 py-3 text-sm font-bold transition ${selected ? "border-primary bg-primary text-primary-foreground" : slot.status === "BLOCKED" ? "border-warning/60 bg-warning/10 text-warning" : disabled ? "cursor-not-allowed border-border bg-background/40 text-muted/40 line-through" : "border-border bg-background hover:border-primary"}`}>{selected ? <Check className="absolute right-1 top-1 size-3" /> : null}{slot.time}{slot.price !== court.hourlyRate ? <span className="mt-1 block text-[10px] font-semibold opacity-80">{rupiah.format(slot.price)}</span> : null}</button>; })}</div></div>
             </article>
           ))}
         </section>

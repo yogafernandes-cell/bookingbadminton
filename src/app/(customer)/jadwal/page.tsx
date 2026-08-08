@@ -2,12 +2,13 @@ import { addDays, format, startOfDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { SchedulePicker, type ScheduleDay } from "@/components/customer/schedule-picker";
 import { getScheduleWindow } from "@/modules/schedules/repository";
+import { resolveSlotPrice } from "@/modules/courts/pricing";
 
 export const dynamic = "force-dynamic";
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ court?: string; date?: string }> }) {
   const { court: requestedCourt, date: requestedDate } = await searchParams;
-  const { courts, operatingHours, slots: storedSlots } = await getScheduleWindow(7);
+  const { courts, operatingHours, slots: storedSlots, priceRules } = await getScheduleWindow(7);
   const now = new Date();
   const slotState = new Map(storedSlots.map((slot) => {
     const key = `${slot.courtId}:${format(slot.startsAt, "yyyy-MM-dd")}:${format(slot.startsAt, "HH:mm")}`;
@@ -36,7 +37,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         imageUrl: court.imageUrl ?? "/images/courts/court-1.jpg",
         slots: times.map((time) => {
           const startsAt = new Date(`${dateKey}T${time}:00+07:00`);
-          return { id: `${court.id}:${dateKey}:${time}`, time, status: startsAt <= now ? "BOOKED" : (slotState.get(`${court.id}:${dateKey}:${time}`) ?? "AVAILABLE") };
+          return { id: `${court.id}:${dateKey}:${time}`, time, price: Number(resolveSlotPrice(court.hourlyRate, priceRules.filter((rule) => rule.courtId === court.id), date.getDay(), time)), status: startsAt <= now ? "BOOKED" : (slotState.get(`${court.id}:${dateKey}:${time}`) ?? "AVAILABLE") };
         }),
       })),
     };

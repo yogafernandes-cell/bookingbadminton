@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { CreateBookingInput } from "./schema";
 import { calculatePromoDiscount } from "@/modules/promos/service";
+import { resolveSlotPrice } from "@/modules/courts/pricing";
 
 export class BookingConflictError extends Error {}
 
@@ -20,10 +21,11 @@ export async function createBooking(input: CreateBookingInput, userId?: string) 
 
   try {
     return await db.$transaction(async (tx) => {
-      const [court, settings, operatingHour] = await Promise.all([
+      const [court, settings, operatingHour, priceRules] = await Promise.all([
         tx.court.findFirst({ where: { id: input.courtId, isActive: true } }),
         tx.setting.findUnique({ where: { id: 1 } }),
         tx.operatingHour.findUnique({ where: { dayOfWeek: new Date(`${input.date}T12:00:00+07:00`).getUTCDay() } }),
+        tx.courtPriceRule.findMany({ where: { courtId: input.courtId, isActive: true } }),
       ]);
       if (!court) throw new BookingConflictError("Lapangan tidak ditemukan atau sedang nonaktif.");
       if (!operatingHour?.isOpen) throw new BookingConflictError("Arena tutup pada tanggal tersebut.");
@@ -37,7 +39,9 @@ export async function createBooking(input: CreateBookingInput, userId?: string) 
       if (unavailable) throw new BookingConflictError("Salah satu jadwal baru saja diambil. Silakan pilih ulang.");
 
       const paymentDueAt = addMinutes(now, settings?.holdDurationMinutes ?? 15);
-      const subtotal = new Prisma.Decimal(court.hourlyRate).mul(times.length);
+      const dayOfWeek = new Date(`${input.date}T12:00:00+07:00`).getUTCDay();
+      const itemPrices = times.map((time) => resolveSlotPrice(court.hourlyRate, priceRules, dayOfWeek, time));
+      const subtotal = itemPrices.reduce((total, price) => total.add(price), new Prisma.Decimal(0));
       const promoCode = input.promoCode?.toUpperCase();
       const promo = promoCode ? await tx.promo.findFirst({ where: { code: promoCode, isActive: true, startsAt: { lte: now }, endsAt: { gte: now } } }) : null;
       if (promoCode && !promo) throw new BookingConflictError("Kode promo tidak aktif atau sudah berakhir.");
@@ -54,7 +58,7 @@ export async function createBooking(input: CreateBookingInput, userId?: string) 
           discountAmount,
           totalAmount: subtotal.sub(discountAmount),
           paymentDueAt,
-          items: { create: startsAt.map((start) => ({ courtId: court.id, startsAt: start, endsAt: addHours(start, 1), price: court.hourlyRate })) },
+          items: { create: startsAt.map((start, index) => ({ courtId: court.id, startsAt: start, endsAt: addHours(start, 1), price: itemPrices[index] })) },
         },
       });
 
