@@ -13,7 +13,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const slotState = new Map(storedSlots.map((slot) => {
     const key = `${slot.courtId}:${format(slot.startsAt, "yyyy-MM-dd")}:${format(slot.startsAt, "HH:mm")}`;
     const status = slot.status === "HELD" && slot.holdExpiresAt && slot.holdExpiresAt <= now ? "AVAILABLE" : slot.status;
-    return [key, status] as const;
+    return [key, { status, renterName: status === "BOOKED" ? slot.booking?.customerName : undefined }] as const;
   }));
 
   const days: ScheduleDay[] = Array.from({ length: 7 }, (_, index) => {
@@ -37,7 +37,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         imageUrl: court.imageUrl ?? "/images/courts/court-1.jpg",
         slots: times.map((time) => {
           const startsAt = new Date(`${dateKey}T${time}:00+07:00`);
-          return { id: `${court.id}:${dateKey}:${time}`, time, price: Number(resolveSlotPrice(court.hourlyRate, priceRules.filter((rule) => rule.courtId === court.id), date.getDay(), time)), status: startsAt <= now ? "BOOKED" : (slotState.get(`${court.id}:${dateKey}:${time}`) ?? "AVAILABLE") };
+          const stored = slotState.get(`${court.id}:${dateKey}:${time}`);
+          const status = startsAt <= now ? "BOOKED" : (stored?.status ?? "AVAILABLE");
+          return { id: `${court.id}:${dateKey}:${time}`, time, price: Number(resolveSlotPrice(court.hourlyRate, priceRules.filter((rule) => rule.courtId === court.id), date.getDay(), time)), status, renterName: status === "BOOKED" ? stored?.renterName : undefined };
         }),
       })),
     };

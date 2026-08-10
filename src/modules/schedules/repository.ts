@@ -8,7 +8,7 @@ export async function getScheduleWindow(days = 7) {
   const [courts, operatingHours, slots, priceRules] = await Promise.all([
     db.court.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     db.operatingHour.findMany(),
-    db.courtSlot.findMany({ where: { startsAt: { gte: from, lt: until } }, select: { courtId: true, startsAt: true, status: true, holdExpiresAt: true } }),
+    db.courtSlot.findMany({ where: { startsAt: { gte: from, lt: until } }, select: { courtId: true, startsAt: true, status: true, holdExpiresAt: true, booking: { select: { customerName: true } } } }),
     db.courtPriceRule.findMany({ where: { isActive: true } }),
   ]);
   return { courts, operatingHours, slots, priceRules };
