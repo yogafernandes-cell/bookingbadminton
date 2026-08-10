@@ -13,7 +13,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const slotState = new Map(storedSlots.map((slot) => {
     const key = `${slot.courtId}:${format(slot.startsAt, "yyyy-MM-dd")}:${format(slot.startsAt, "HH:mm")}`;
     const status = slot.status === "HELD" && slot.holdExpiresAt && slot.holdExpiresAt <= now ? "AVAILABLE" : slot.status;
-    return [key, { status, renterName: status === "BOOKED" ? slot.booking?.customerName : undefined }] as const;
+    const renterName = status === "BOOKED" ? slot.booking?.customerName.trim().split(/\s+/)[0] : undefined;
+    return [key, { status, renterName }] as const;
   }));
 
   const days: ScheduleDay[] = Array.from({ length: 7 }, (_, index) => {
