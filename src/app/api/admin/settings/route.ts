@@ -11,8 +11,8 @@ export async function PUT(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const admin = await db.user.findUnique({ where: { email: session.user.email }, select: { isActive: true } });
-    if (!admin?.isActive) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const admin = await db.user.findFirst({ where: { email: session.user.email, role: "ADMIN", isActive: true }, select: { id: true } });
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const input = updateSettingsSchema.parse(await request.json());
     const settings = await db.setting.upsert({
       where: { id: 1 },

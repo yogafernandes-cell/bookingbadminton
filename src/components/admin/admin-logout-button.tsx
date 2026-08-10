@@ -3,10 +3,10 @@
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 
-export function AdminLogoutButton() {
+export function AdminLogoutButton({ redirectTo = "/admin/login" }: { redirectTo?: string }) {
   async function logout() {
     await signOut({ redirect: false });
-    window.location.assign("/admin/login");
+    window.location.assign(redirectTo);
   }
   return <button type="button" onClick={logout} className="mt-auto flex items-center gap-2 text-sm font-semibold text-muted hover:text-primary"><LogOut className="size-4" />Keluar</button>;
 }

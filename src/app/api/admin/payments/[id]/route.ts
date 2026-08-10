@@ -14,8 +14,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const input = reviewSchema.parse(await request.json());
     const payment = await db.payment.findFirst({ where: { id, status: "SUBMITTED", booking: { status: "PAYMENT_REVIEW" } }, select: { id: true, bookingId: true } });
     if (!payment) return NextResponse.json({ error: "Pembayaran sudah diproses atau tidak ditemukan." }, { status: 404 });
-    const admin = await db.user.findUnique({ where: { email: session.user.email } });
-    if (!admin?.isActive) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const admin = await db.user.findFirst({ where: { email: session.user.email, role: "ADMIN", isActive: true } });
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const reviewedAt = new Date();
     await db.$transaction([
       db.payment.update({ where: { id: payment.id }, data: { status: input.action === "approve" ? "VERIFIED" : "REJECTED", rejectionReason: input.action === "reject" ? input.reason : null, reviewedById: admin.id, reviewedAt } }),

@@ -10,8 +10,8 @@ import { manageScheduleSchema } from "@/modules/schedules/admin-schema";
 async function hasActiveAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return false;
-  const admin = await db.user.findUnique({ where: { email: session.user.email }, select: { isActive: true } });
-  return Boolean(admin?.isActive);
+  const admin = await db.user.findFirst({ where: { email: session.user.email, role: "ADMIN", isActive: true }, select: { id: true } });
+  return Boolean(admin);
 }
 
 export async function POST(request: Request) {

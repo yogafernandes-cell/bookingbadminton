@@ -16,8 +16,8 @@ const schema = z.discriminatedUnion("action", [
 async function hasActiveAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return false;
-  const user = await db.user.findUnique({ where: { email: session.user.email }, select: { isActive: true } });
-  return Boolean(user?.isActive);
+  const user = await db.user.findFirst({ where: { email: session.user.email, role: "ADMIN", isActive: true }, select: { id: true } });
+  return Boolean(user);
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -56,9 +56,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const prices = times.map((time) => resolveSlotPrice(court.hourlyRate, rules, dayOfWeek, time));
       const subtotal = prices.reduce((total, price) => total.add(price), new Prisma.Decimal(0));
       const discount = Prisma.Decimal.min(booking.discountAmount, subtotal);
+      const newTotal = subtotal.sub(discount);
+      if (booking.paymentStatus === "VERIFIED" && !newTotal.equals(booking.totalAmount)) throw new BookingConflictError("Booking yang sudah lunas hanya dapat dipindahkan ke jadwal dengan total harga yang sama. Tangani selisih/refund terlebih dahulu.");
       await tx.courtSlot.updateMany({ where: { bookingId: booking.id }, data: { status: "AVAILABLE", bookingId: null, holdExpiresAt: null, blockedReason: null } });
       await tx.bookingItem.deleteMany({ where: { bookingId: booking.id } });
-      await tx.booking.update({ where: { id: booking.id }, data: { totalAmount: subtotal.sub(discount), items: { create: startsAt.map((start, index) => ({ courtId, startsAt: start, endsAt: addHours(start, 1), price: prices[index] })) } } });
+      await tx.booking.update({ where: { id: booking.id }, data: { totalAmount: newTotal, items: { create: startsAt.map((start, index) => ({ courtId, startsAt: start, endsAt: addHours(start, 1), price: prices[index] })) } } });
       for (const start of startsAt) await tx.courtSlot.upsert({ where: { courtId_startsAt: { courtId, startsAt: start } }, create: { courtId, startsAt: start, endsAt: addHours(start, 1), status: "BOOKED", bookingId: booking.id }, update: { endsAt: addHours(start, 1), status: "BOOKED", bookingId: booking.id, holdExpiresAt: null, blockedReason: null } });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return NextResponse.json({ success: true });

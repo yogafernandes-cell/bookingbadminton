@@ -19,8 +19,14 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
         const user = await db.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
         if (!user?.isActive || !(await compare(parsed.data.password, user.passwordHash))) return null;
-        return { id: user.id, name: user.name, email: user.email };
+        return { id: user.id, name: user.name, email: user.email, role: user.role } as typeof user;
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) (token as { role?: string }).role = (user as { role?: string }).role;
+      return token;
+    },
+  },
 };

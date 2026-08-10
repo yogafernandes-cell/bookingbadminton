@@ -9,8 +9,8 @@ import { courtInputSchema } from "@/modules/courts/schema";
 async function hasActiveAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return false;
-  const user = await db.user.findUnique({ where: { email: session.user.email }, select: { isActive: true } });
-  return Boolean(user?.isActive);
+  const user = await db.user.findFirst({ where: { email: session.user.email, role: "ADMIN", isActive: true }, select: { id: true } });
+  return Boolean(user);
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

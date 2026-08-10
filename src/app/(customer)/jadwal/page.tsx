@@ -8,8 +8,11 @@ export const dynamic = "force-dynamic";
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ court?: string; date?: string }> }) {
   const { court: requestedCourt, date: requestedDate } = await searchParams;
-  const { courts, operatingHours, slots: storedSlots, priceRules } = await getScheduleWindow(7);
   const now = new Date();
+  const today = startOfDay(now);
+  const requestedStart = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate ?? "") ? startOfDay(new Date(`${requestedDate}T12:00:00+07:00`)) : today;
+  const startDate = requestedStart >= today ? requestedStart : today;
+  const { courts, operatingHours, slots: storedSlots, priceRules } = await getScheduleWindow(7, startDate);
   const slotState = new Map(storedSlots.map((slot) => {
     const key = `${slot.courtId}:${format(slot.startsAt, "yyyy-MM-dd")}:${format(slot.startsAt, "HH:mm")}`;
     const status = slot.status === "HELD" && slot.holdExpiresAt && slot.holdExpiresAt <= now ? "AVAILABLE" : slot.status;
@@ -18,7 +21,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   }));
 
   const days: ScheduleDay[] = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(startOfDay(now), index);
+    const date = addDays(startDate, index);
     const dateKey = format(date, "yyyy-MM-dd");
     const hours = operatingHours.find((item) => item.dayOfWeek === date.getDay());
     const opensAt = Number(hours?.opensAt.split(":")[0] ?? 8);

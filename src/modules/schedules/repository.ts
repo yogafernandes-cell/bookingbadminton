@@ -2,8 +2,8 @@ import "server-only";
 import { addDays, startOfDay } from "date-fns";
 import { db } from "@/lib/db";
 
-export async function getScheduleWindow(days = 7) {
-  const from = startOfDay(new Date());
+export async function getScheduleWindow(days = 7, startDate = startOfDay(new Date())) {
+  const from = startOfDay(startDate);
   const until = addDays(from, days);
   const [courts, operatingHours, slots, priceRules] = await Promise.all([
     db.court.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
